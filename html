@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Droid Terminal</title>
+    <style>
+        body {
+            font-family: 'Courier New', Courier, monospace;
+            background-color: #000;
+            color: #0F0;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+
+        .matrix-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            pointer-events: none;
+            background-color: black;
+        }
+
+        .matrix-text {
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 16px;
+            position: absolute;
+            color: lime;
+            user-select: none;
+            white-space: nowrap;
+            pointer-events: none;
+        }
+
+        .terminal {
+            width: 80%;
+            max-width: 800px;
+            margin: 50px auto;
+            background-color: #000;
+            border: 2px solid #0F0;
+            border-radius: 5px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .terminal-header {
+            background-color: #444;
+            padding: 5px;
+        }
+
+        .terminal-body {
+            padding: 10px;
+            min-height: 200px;
+        }
+
+        .terminal-input {
+            display: flex;
+            background-color: #000;
+            padding: 5px;
+        }
+
+        .terminal-input span {
+            color: #0F0;
+            padding-right: 5px;
+        }
+    </style>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            // Matrix Effect
+            const matrixBg = document.querySelector('.matrix-bg');
+            const matrixText = document.createElement('div');
+            matrixText.classList.add('matrix-text');
+            matrixBg.appendChild(matrixText);
+
+            const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+            const matrixSpeed = 50; // Change the speed as needed
+            const matrixDensity = 0.02; // Change the density as needed
+
+            function getRandomCharacter() {
+                return characters.charAt(Math.floor(Math.random() * characters.length));
+            }
+
+            function createMatrix() {
+                const columns = Math.floor(window.innerWidth / 12); // Adjust the column width as needed
+                const matrix = [];
+                for (let i = 0; i < columns; i++) {
+                    matrix.push({
+                        y: -Math.floor(Math.random() * 100), // Start at random position
+                        characters: Array(Math.floor(Math.random() * 20)).fill().map(getRandomCharacter)
+                    });
+                }
+                return matrix;
+            }
+
+            function updateMatrix(matrix) {
+                matrix.forEach(column => {
+                    column.y += matrixSpeed / 50;
+                    if (column.y * 12 > window.innerHeight || Math.random() < matrixDensity) {
+                        column.y = -12;
+                        column.characters = Array(Math.floor(Math.random() * 20)).fill().map(getRandomCharacter);
+                    }
+                });
+            }
+
+            function renderMatrix(matrix) {
+                const text = matrix.map(column => {
+                    return column.characters.join('');
+                }).join('<br>');
+                matrixText.innerHTML = text;
+            }
+
+            function animateMatrix() {
+                const matrix = createMatrix();
+                renderMatrix(matrix);
+                updateMatrix(matrix);
+                requestAnimationFrame(animateMatrix);
+            }
+
+            animateMatrix();
+
+            // Terminal Functions
+            const terminalBody = document.getElementById('terminal-body');
+            const commandLine = document.getElementById('command-line');
+            const output = document.querySelector('.output');
+
+            commandLine.addEventListener('keyup', function(event) {
+                if (event.key === 'Enter') {
+                    const command = commandLine.value.trim();
+                    output.textContent += `$ ${command}\n`;
+
+                    // Handle commands
+                    const args = command.split(' ');
+                    const mainCommand = args[0].toLowerCase();
+                    const flags = args.slice(1);
+
+                    switch(mainCommand) {
+                        case 'help':
+                            output.textContent += "Available commands:\n";
+                            output.textContent += "- ls: List files and directories\n";
+                            output.textContent += "- cd: Change directory\n";
+                            output.textContent += "- mkdir: Create a directory\n";
+                            output.textContent += "- rmdir: Remove a directory\n";
+                            output.textContent += "- cat: Display file content\n";
+                            output.textContent += "- mv: Move or rename files\n";
+                            output.textContent += "- rm: Remove files\n";
+                            output.textContent += "- sudo: Run a command with superuser privileges\n";
+                            output.textContent += "- chmod: Change file permissions\n";
+                            output.textContent += "- chown: Change file ownership\n";
+                            output.textContent += "- ps: List processes\n";
+                            output.textContent += "- kill: Terminate processes\n";
+                            output.textContent += "- man: Display manual pages\n";
+                            break;
+                        case 'ls':
+                            output.textContent += "file1.txt  file2.txt  folder1/\n";
+                            break;
+                        case 'cd':
+                            if (args.length === 1) {
+                                output.textContent += "Change to home directory.\n";
+                            } else if (args[1] === '..') {
+                                output.textContent += "Move to the parent directory.\n";
+                            } else {
+                                output.textContent += `Change to directory: ${args[1]}\n`;
+                            }
+                            break;
+                        case 'mkdir':
+                            output.textContent += `Create directory: ${args[1]}\n`;
+                            break;
+                        case 'rmdir':
+                            output.textContent += `Remove directory: ${args[1]}\n`;
+                            break;
+                        case 'cat':
+                            output.textContent += `Display content of ${args[1]}\n`;
+                            break;
+                        case 'mv':
+                            output.textContent += `Move ${args[1]} to ${args[2]}\n`;
+                            break;
+                        case 'rm':
+                            output.textContent += `Remove file: ${args[1]}\n`;
+                            break;
+                        case 'sudo':
+                            output.textContent += "Run command with superuser privileges.\n";
+                            break;
+                        case 'chmod':
+                            output.textContent += `Change permissions of ${args[1]} to ${args[2]}\n`;
+                            break;
+                        case 'chown':
+                            output.textContent += `Change ownership of ${args[2]} to ${args[1]}\n`;
+                            break;
+                        case 'ps':
+                            output.textContent += "List of processes:\n";
+                            output.textContent += "PID   CMD\n";
+                            output.textContent += "123   process1\n";
+                            output.textContent += "456   process2\n";
+                            break;
+                        case 'kill':
+                            output.textContent += `Terminate process with PID: ${args[1]}\n`;
+                            break;
+                        case 'man':
+                            output.textContent += `Display manual page for ${args[1]}\n`;
+                            break;
+                        default:
+                            output.textContent += `Command '${mainCommand}' not recognized. Type 'help' for assistance.\n`;
+                    }
+
+                    commandLine.value = ''; // Clear input
+                    terminalBody.scrollTop = terminalBody.scrollHeight; // Scroll to bottom
+                }
+            });
+        });
+    </script>
+</head>
+<body>
+    <div class="matrix-bg"></div>
+
+    <div class="terminal">
+        <div class="terminal-header">Droid Terminal</div>
+        <div class="terminal-body" id="terminal-body">
+            <p>Welcome to the future.</p>
+            <p>Type 'help' for assistance.</p>
+            <p class="output"></p>
+        </div>
+        <div class="terminal-input">
+            <span>$&nbsp;</span><input type="text" id="command-line" autofocus>
+        </div>
+    </div>
+</body>
+</html>
